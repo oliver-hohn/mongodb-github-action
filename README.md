@@ -69,6 +69,49 @@ jobs:
         CI: true
 ```
 
+### Logging into Dockerhub
+By default, this Github action does not authenticate requests to pull public images from Dockerhub. This means that in some cases the pull request is rate limited by Dockerhub: https://docs.docker.com/docker-hub/download-rate-limit/#how-do-i-authenticate-pull-requests (unauthorized requests are rate limited by IP!).
+
+To overcome this, you can log into Dockerhub using the `dockerhub-username` and `dockerhub-password` inputs.
+- `dockerhub-username`: the "docker ID" (aka username) used to log into the desired Dockerhub account.
+- `dockerhub-password`: the password for the desired Dockerhub account or a personal access token for the account. _Best practices is to use a personal access token, so that access can be scoped down: https://docs.docker.com/security/for-developers/access-tokens/_
+
+```yaml
+name: Run tests
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20.x, 22.x]
+        mongodb-version: ['6.0', '7.0', '8.0']
+
+    steps:
+    - name: Git checkout
+      uses: actions/checkout@v4
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+
+    - name: Start MongoDB
+      uses: supercharge/mongodb-github-action@1.11.0
+      with:
+        # To avoid leaking your credentials in plaintext, use Github secrets to hold the Dockerhub credentials
+        dockerhub-username: ${{ secrets.DOCKERHUB_USERNAME }}
+        dockerhub-password: ${{ secrets.DOCKERHUB_PASSWORD }}
+        mongodb-version: ${{ matrix.mongodb-version }}
+
+    - run: npm install
+
+    - run: npm test
+      env:
+        CI: true
+```
 
 ### Using a Custom MongoDB Port
 You can start the MongoDB instance on a custom port. Use the `mongodb-port: 12345` input to configure port `12345` for MongoDB. Replace `12345` with the port you want to use in your test runs.
@@ -245,7 +288,6 @@ jobs:
 ```
 
 **Caveat:** due to [this issue](https://github.com/docker-library/mongo/issues/211), you **cannot enable user creation AND replica sets** initially. Therefore, if you use this action to setup a replica set, please create your users through a separate script.
-
 
 ## License
 MIT © [Supercharge](https://superchargejs.com)
