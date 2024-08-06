@@ -1,13 +1,15 @@
 #!/bin/sh
 
 # Map input values from the GitHub Actions workflow to shell variables
-MONGODB_VERSION=$1
-MONGODB_REPLICA_SET=$2
-MONGODB_PORT=$3
-MONGODB_DB=$4
-MONGODB_USERNAME=$5
-MONGODB_PASSWORD=$6
-MONGODB_CONTAINER_NAME=$7
+DOCKERHUB_USERNAME=$1
+DOCKERHUB_PASSWORD=$2
+MONGODB_VERSION=$3
+MONGODB_REPLICA_SET=$4
+MONGODB_PORT=$5
+MONGODB_DB=$6
+MONGODB_USERNAME=$7
+MONGODB_PASSWORD=$8
+MONGODB_CONTAINER_NAME=$9
 
 # `mongosh` is used starting from MongoDB 5.x
 MONGODB_CLIENT="mongosh --quiet"
@@ -72,6 +74,24 @@ wait_for_mongodb () {
 #  echo "Removing existing container [$MONGODB_CONTAINER_NAME]"
 #  docker rm -f $MONGODB_CONTAINER_NAME
 # fi
+
+login_to_dockerhub () {
+  echo "::group::Logging in to Docker Hub"
+  echo "Logging in as [$DOCKERHUB_USERNAME]"
+  echo ""
+
+  echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
+
+  if [ $? -ne 0 ]; then
+      echo "Error logging in to Docker Hub"
+      exit 2
+  fi
+  echo "::endgroup::"
+}
+
+if [[ -n "$DOCKERHUB_USERNAME" && -n "$DOCKERHUB_PASSWORD" ]]; then
+  login_to_dockerhub
+fi
 
 
 if [ -z "$MONGODB_REPLICA_SET" ]; then

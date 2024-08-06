@@ -1,5 +1,9 @@
 # See https://github.com/krzema12/github-actions-typing
 inputs:
+  dockerhub-username:
+    type: string
+  dockerhub-password:
+    type: string
   mongodb-version:
     type: string
   mongodb-replica-set:
